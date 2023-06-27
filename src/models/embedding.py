@@ -1,9 +1,8 @@
+import torch
+from .pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
+
 from .model_config import MODEL_CONFIG
 from ..logging import logger
-
-import torch
-
-from .pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
 
 path_embedding: str = MODEL_CONFIG["models"]["embedding"]["model_path"]
 _device = MODEL_CONFIG["models"]["embedding"]["device"]

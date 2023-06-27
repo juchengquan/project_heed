@@ -1,4 +1,3 @@
-import io
 from io import BytesIO
 import datetime
 import numpy as np
@@ -17,9 +16,11 @@ from .audio import decode_audio
 def convert_time(secs):
     return datetime.timedelta(seconds=round(secs))
 
-def standardize_audio_format(audio_content: BytesIO):
-    res_np: np.array = decode_audio(audio_content, sampling_rate=16000, split_stereo=False)
-    audio_content.seek(0)
+def standardize_audio_format(
+        audio: BytesIO
+    ):
+    res_np: np.array = decode_audio(audio, sampling_rate=16000, split_stereo=False)
+    audio.seek(0)
     return res_np
 
 def get_duration(audio: Union[np.ndarray, Tuple[np.ndarray, np.ndarray], str], sample_rate: int = 16000) -> float:
@@ -38,8 +39,6 @@ def get_duration(audio: Union[np.ndarray, Tuple[np.ndarray, np.ndarray], str], s
     else:
         raise NotImplementedError("Type not supported.")
     return duration
-
-
 
 def convert_to_16_bit_wav(data):
     # Based on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html

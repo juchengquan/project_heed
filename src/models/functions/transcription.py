@@ -1,18 +1,13 @@
-from io import BytesIO
 import re
-import numpy as np
-import pandas as pd
-from typing import List, Dict, Union
 import torch
+from io import BytesIO
 
-from .misc import convert_time
 from ...logging import logger
-from ..faster_whisper import MODEL_CONFIG, CONFIG_ASR
 
 def _transcribe(
         model_asr,
         config_asr,
-        audio: Union[BytesIO, str],
+        audio: BytesIO,
         config_manual: dict = {}
     ):
     _config_asr = config_asr.copy()
@@ -90,7 +85,7 @@ def _get_segment_by_language(
 def get_transcription_segments(
         model_asr,
         config_asr,
-        audio: Union[BytesIO, str],
+        audio: BytesIO,
         language: str = "",
         generation_mode: bool = True,
         yield_speed: int = 5,

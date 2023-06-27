@@ -8,7 +8,7 @@ system dependencies. FFmpeg does not need to be installed on the system.
 However, the API is quite low-level so we need to manipulate audio frames directly.
 """
 
-import io
+from io import BytesIO
 import itertools
 
 from typing import BinaryIO, Union
@@ -40,7 +40,7 @@ def decode_audio(
         rate=sampling_rate,
     )
 
-    raw_buffer = io.BytesIO()
+    raw_buffer = BytesIO()
     dtype = None
 
     with av.open(input_file, metadata_errors="ignore") as container:
@@ -66,7 +66,6 @@ def decode_audio(
 
     return audio
 
-
 def _ignore_invalid_frames(frames):
     iterator = iter(frames)
 
@@ -77,7 +76,6 @@ def _ignore_invalid_frames(frames):
             break
         except av.error.InvalidDataError:
             continue
-
 
 def _group_frames(frames, num_samples=None):
     fifo = av.audio.fifo.AudioFifo()

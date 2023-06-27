@@ -1,24 +1,20 @@
-import io
-import wave
-import warnings
 import torch
 import numpy as np
 import pandas as pd
 
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union
 
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
-from scipy.io import wavfile
 
 from .misc import convert_time, get_duration
 
-from pyannote.audio import Audio
-from pyannote.core import Segment
+from ..pyannote.audio import Audio
+from ..pyannote.segment import Segment
+from ..pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
 
 from ...logging import logger
 
-from ..pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
 
 def _get_diarization(
         segments: List[Dict], 
@@ -60,7 +56,7 @@ def _get_diarization(
 
 def _make_embeddings(
         model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
-        audio: Union[np.ndarray, io.BytesIO, str],
+        audio: np.ndarray,
         segments: List[Dict],
     ):
     duration: float = get_duration(audio)
@@ -80,37 +76,37 @@ def _make_embeddings(
 # Create embedding
 def _segment_embedding(
         model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
-        audio: Union[np.ndarray, str, io.BytesIO],
+        audio: np.ndarray,
         segment: Dict,
         duration: float,
     ) -> np.ndarray:
-    if isinstance(audio, str):
-        audio = Audio()
-        start = segment["start"]
-        # Whisper overshoots the end timestamp in the last segment
-        end = min(duration, segment["end"])
-        clip = Segment(start, end)
-        waveform, _ = audio.crop(audio, clip)
-        return model_embedding(waveform[None])
-
-    if isinstance(audio, np.ndarray):
-        audio_obj = Audio()
-        start = segment["start"]
-        # Whisper overshoots the end timestamp in the last segment
-        end = min(duration, segment["end"])
-        clip = Segment(start, end)
-        wtf_in = {
-            "waveform": torch.from_numpy(np.expand_dims(audio, axis=0)),
-            "sample_rate": 16000,
-        }
-        waveform, _ = audio_obj.crop(wtf_in, clip)
-        return model_embedding(waveform[None])
-    else:
-        raise NotImplementedError("Not implemented im '_segment_embedding'.")
+    audio_obj = Audio()
+    start = segment["start"]
+    # Whisper overshoots the end timestamp in the last segment
+    end = min(duration, segment["end"])
+    clip = Segment(start, end)
+    _obj = {
+        "waveform": torch.from_numpy(np.expand_dims(audio, axis=0)),
+        "sample_rate": 16000,
+    }
+    waveform, _ = audio_obj.crop(_obj, clip)
+    return model_embedding(waveform[None])
+    
+    # if isinstance(audio, str):
+    #     raise NotImplementedError("Not implemented im '_segment_embedding'.")
+    #     audio = Audio()
+    #     start = segment["start"]
+    #     # Whisper overshoots the end timestamp in the last segment
+    #     end = min(duration, segment["end"])
+    #     clip = Segment(start, end)
+    #     waveform, _ = audio.crop(audio, clip)
+    #     return model_embedding(waveform[None])
+    # else:
+    #     raise NotImplementedError("Not implemented im '_segment_embedding'.")
 
 def get_diarization(
         model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
-        audio: str,
+        audio: np.ndarray,
         segments: List[Dict],
         return_type: str = "list"
     ) -> Union[List[List], List[Dict]]:

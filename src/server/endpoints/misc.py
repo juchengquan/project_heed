@@ -1,6 +1,4 @@
-from io import BytesIO
-import os
-import hashlib, uuid
+import hashlib
 from datetime import datetime
 
 def get_trace_id(file_name: str = None):

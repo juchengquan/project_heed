@@ -1,5 +1,4 @@
 import yaml
-
 import os
 from ..logging import logger
 

@@ -1,7 +1,7 @@
+from faster_whisper import WhisperModel
+
 from .model_config import MODEL_CONFIG
 from ..logging import logger
-
-from faster_whisper import WhisperModel
 
 _model_config_whisper = MODEL_CONFIG["models"]["whisper"]
 
