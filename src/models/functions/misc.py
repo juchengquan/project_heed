@@ -3,23 +3,19 @@ import datetime
 import numpy as np
 import pandas as pd
 import warnings
-# import soundfile as sf
 
-from typing import List, Dict, Union, Tuple
+from typing import Union, Tuple
 from .audio import decode_audio
 
-# def convert_wav(path_audio_file):
-#     data, samplerate = sf.read(path_audio_file)
-#     sf.write(path_audio_file, data, samplerate, subtype='PCM_16')
-#     return path_audio_file
+def convert_time(secs, as_string: bool=True):
+    res = datetime.timedelta(seconds=round(secs))
+    if as_string:
+        return str(res)
+    else:
+        return res
 
-def convert_time(secs):
-    return datetime.timedelta(seconds=round(secs))
-
-def standardize_audio_format(
-        audio: BytesIO
-    ):
-    res_np: np.array = decode_audio(audio, sampling_rate=16000, split_stereo=False)
+def standardize_audio_format(audio: BytesIO) -> np.ndarray:
+    res_np = decode_audio(audio, sampling_rate=16000, split_stereo=False)
     audio.seek(0)
     return res_np
 
@@ -40,33 +36,38 @@ def get_duration(audio: Union[np.ndarray, Tuple[np.ndarray, np.ndarray], str], s
         raise NotImplementedError("Type not supported.")
     return duration
 
-def convert_to_16_bit_wav(data):
-    # Based on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html
-    breakpoint()
-    if data.dtype == np.float32:
-        warnings.warn(
-            "Audio data is not in 16-bit integer format."
-            "Trying to convert to 16-bit int format."
-        )
-        data = data / np.abs(data).max()
-        data = data * 32767
-        data = data.astype(np.int16)
-    elif data.dtype == np.int32:
-        warnings.warn(
-            "Audio data is not in 16-bit integer format."
-            "Trying to convert to 16-bit int format."
-        )
-        data = data / 65538
-        data = data.astype(np.int16)
-    elif data.dtype == np.int16:
-        pass
-    elif data.dtype == np.uint8:
-        warnings.warn(
-            "Audio data is not in 16-bit integer format."
-            "Trying to convert to 16-bit int format."
-        )
-        data = data * 257 - 32768
-        data = data.astype(np.int16)
-    else:
-        raise ValueError("Audio data cannot be converted to " "16-bit int format.")
-    return data
+# def convert_wav(path_audio_file):
+#     data, samplerate = sf.read(path_audio_file)
+#     sf.write(path_audio_file, data, samplerate, subtype='PCM_16')
+#     return path_audio_file
+
+# def convert_to_16_bit_wav(data):
+#     # Based on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.wavfile.write.html
+#     breakpoint()
+#     if data.dtype == np.float32:
+#         warnings.warn(
+#             "Audio data is not in 16-bit integer format."
+#             "Trying to convert to 16-bit int format."
+#         )
+#         data = data / np.abs(data).max()
+#         data = data * 32767
+#         data = data.astype(np.int16)
+#     elif data.dtype == np.int32:
+#         warnings.warn(
+#             "Audio data is not in 16-bit integer format."
+#             "Trying to convert to 16-bit int format."
+#         )
+#         data = data / 65538
+#         data = data.astype(np.int16)
+#     elif data.dtype == np.int16:
+#         pass
+#     elif data.dtype == np.uint8:
+#         warnings.warn(
+#             "Audio data is not in 16-bit integer format."
+#             "Trying to convert to 16-bit int format."
+#         )
+#         data = data * 257 - 32768
+#         data = data.astype(np.int16)
+#     else:
+#         raise ValueError("Audio data cannot be converted to " "16-bit int format.")
+#     return data

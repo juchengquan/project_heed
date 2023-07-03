@@ -9,25 +9,22 @@ from sklearn.metrics import silhouette_score
 
 from .misc import convert_time, get_duration
 
-from ..pyannote.audio import Audio
-from ..pyannote.segment import Segment
-from ..pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
+from ..pyannote import Audio, Segment
+from ..pretrained import SpeechBrainPretrainedSpeakerEmbedding
 
 from ...logging import logger
-
 
 def _get_diarization(
         segments: List[Dict], 
         embeddings: np.ndarray, 
+        num_speakers: int = 0,
         min_no: int = 2, 
         max_no: int = 5,
     ) -> List[Dict]:
-    num_speakers = 0
 
     if num_speakers == 0:
     # Find the best number of speakers
         score_num_speakers = {}
-
         for num_speakers in range(min_no, max_no+1):
             try:
                 clustering = AgglomerativeClustering(num_speakers).fit(embeddings)
@@ -55,9 +52,9 @@ def _get_diarization(
     return segments
 
 def _make_embeddings(
-        model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
         audio: np.ndarray,
         segments: List[Dict],
+        model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
     ):
     duration: float = get_duration(audio)
     logger.info(f"Duration: {duration}")
@@ -68,7 +65,7 @@ def _make_embeddings(
             model_embedding=model_embedding,
             audio=audio,
             segment=segment,
-            duration=duration
+            duration=duration,
         )
     torch.cuda.empty_cache()
     return np.nan_to_num(embeddings)
@@ -91,30 +88,18 @@ def _segment_embedding(
     }
     waveform, _ = audio_obj.crop(_obj, clip)
     return model_embedding(waveform[None])
-    
-    # if isinstance(audio, str):
-    #     raise NotImplementedError("Not implemented im '_segment_embedding'.")
-    #     audio = Audio()
-    #     start = segment["start"]
-    #     # Whisper overshoots the end timestamp in the last segment
-    #     end = min(duration, segment["end"])
-    #     clip = Segment(start, end)
-    #     waveform, _ = audio.crop(audio, clip)
-    #     return model_embedding(waveform[None])
-    # else:
-    #     raise NotImplementedError("Not implemented im '_segment_embedding'.")
 
 def get_diarization(
-        model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
         audio: np.ndarray,
         segments: List[Dict],
-        return_type: str = "list"
+        model_embedding: SpeechBrainPretrainedSpeakerEmbedding,
+        return_type: str = "list",
     ) -> Union[List[List], List[Dict]]:
-    _embeddings: np.ndarray = _make_embeddings(model_embedding=model_embedding, audio=audio, segments=segments)
+    _embeddings: np.ndarray = _make_embeddings(audio=audio, segments=segments, model_embedding=model_embedding)
     
-    segments: List[Dict] = _get_diarization(segments=segments, embeddings=_embeddings)
+    segments: List[Dict] = _get_diarization(segments=segments, embeddings=_embeddings, num_speakers=0)
     
-    outputs: pd.DataFrame = _make_diarization_outputs (segments=segments)
+    outputs: pd.DataFrame = _make_diarization_outputs(segments=segments)
     
     if return_type == "list":
         return outputs.to_dict(orient="split")["data"]
@@ -124,7 +109,9 @@ def get_diarization(
         raise NotImplementedError("Not implemented")
 
 # Make output
-def _make_diarization_outputs(segments: List[Dict]) -> pd.DataFrame:
+def _make_diarization_outputs(segments: List[Dict], time_conversion: bool = False) -> pd.DataFrame:
+    convert_func = convert_time if time_conversion else lambda x: x
+    
     objects = {
         "start" : [],
         "end": [],
@@ -134,15 +121,15 @@ def _make_diarization_outputs(segments: List[Dict]) -> pd.DataFrame:
     text = ""
     for (i, segment) in enumerate(segments):
         if i == 0 or segments[i - 1]["speaker"] != segment["speaker"]:
-            objects["start"].append(str(convert_time(segment["start"])))
+            objects["start"].append(convert_func(segment["start"]))
             objects["speaker"].append(segment["speaker"])
             if i != 0:
-                objects["end"].append(str(convert_time(segments[i - 1]["end"])))
+                objects["end"].append(convert_func(segments[i - 1]["end"]))
                 objects["text"].append(text)
                 text = ""
         text += segment["text"] + " "
     if text:
-        objects["end"].append(str(convert_time(segments[i]["end"]))) # TODO
+        objects["end"].append(convert_func(segments[i]["end"])) # TODO
         objects["text"].append(text)
     
     df_obj = pd.DataFrame(objects)

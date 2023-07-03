@@ -1,5 +1,5 @@
 import torch
-from .pretrained.speechbrain_pretrained_speakerembedding import SpeechBrainPretrainedSpeakerEmbedding
+from .pretrained import SpeechBrainPretrainedSpeakerEmbedding
 
 from .model_config import MODEL_CONFIG
 from ..logging import logger

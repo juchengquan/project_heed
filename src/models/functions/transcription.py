@@ -1,13 +1,38 @@
 import re
 import torch
-from io import BytesIO
+import numpy as np
+from typing import Any
 
 from ...logging import logger
+           
+def get_transcription_segments(
+        audio: np.ndarray,
+        model_asr: Any,
+        config_asr: Any,
+        language: str = "",
+        generation_mode: bool = True,
+        yield_speed: int = 5,
+        return_info: bool = False,
+    ):
+    if language:
+        segments_raw, info = _transcribe(audio=audio, model_asr=model_asr, config_asr=config_asr, config_manual={"language": language})
+    else:
+        segments_raw, info = _transcribe(audio=audio, model_asr=model_asr, config_asr=config_asr, config_manual={"language": "en"})
+    
+    _lang = info.language if info.language in ["en", "zh"] else "en"
+    res: list = _get_segment_by_language(
+        segment_raw=segments_raw, generation_mode=generation_mode, yield_speed=yield_speed, language=_lang
+    )
+    res_temp = list(res)
+    _segments = res_temp[-1]
+    
+    logger.info("Transcription done.")
+    return _segments, info if return_info else _segments
 
 def _transcribe(
-        model_asr,
-        config_asr,
-        audio: BytesIO,
+        audio: np.ndarray,
+        model_asr: Any,
+        config_asr: Any,
         config_manual: dict = {}
     ):
     _config_asr = config_asr.copy()
@@ -81,30 +106,3 @@ def _get_segment_by_language(
 
     torch.cuda.empty_cache()
     yield _segments
-            
-def get_transcription_segments(
-        model_asr,
-        config_asr,
-        audio: BytesIO,
-        language: str = "",
-        generation_mode: bool = True,
-        yield_speed: int = 5,
-        return_info: bool = False,
-    ):
-    if language:
-        segments_raw, info = _transcribe(model_asr=model_asr, config_asr=config_asr, audio=audio, config_manual={"language": language})
-    else:
-        segments_raw, info = _transcribe(model_asr=model_asr, config_asr=config_asr, audio=audio, config_manual={"language": "en"})
-    
-    _lang = info.language if info.language in ["en", "zh"] else "en"
-    res: list = _get_segment_by_language(
-        segment_raw=segments_raw, generation_mode=generation_mode, yield_speed=yield_speed, language=_lang
-    )
-    res_temp = list(res)
-    print(res_temp)
-    _segments = res_temp[-1]
-    
-    if isinstance(audio, BytesIO):
-        audio.seek(0)
-    logger.info("Transcription done.")
-    return _segments, info if return_info else _segments

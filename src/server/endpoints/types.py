@@ -1,4 +1,4 @@
-from fastapi import Form, File, UploadFile, Depends, HTTPException
+from fastapi import Form, File, UploadFile, Depends
 from pydantic import BaseModel
 
 from typing import Optional

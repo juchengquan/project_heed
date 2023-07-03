@@ -1,9 +1,8 @@
 import time
+import numpy as np
 from io import BytesIO
 from fastapi import Depends
 from starlette.datastructures import UploadFile
-
-import numpy as np
 
 from .types import BaseFilePayload, validate_file_payload
 
@@ -50,21 +49,21 @@ def shell_func(
         if_diarize: str,
     ):
     audio_np: np.ndarray = standardize_audio_format(audio)
-    # duration: float = get_duration(audio=audio_np, sample_rate=16000)
+    duration: float = get_duration(audio=audio_np, sample_rate=16000)
     
     transcript, info = get_transcription_segments(
+        audio=audio_np,
         model_asr=MODEL_ASR,
         config_asr=CONFIG_ASR,
-        audio=audio_np,
         language=language,
         generation_mode=False,
         return_info=True,
     )
     if if_diarize:
         transcript = get_diarization(
-            model_embedding=MODEL_EMBEDDING,
             audio=audio_np,
             segments=transcript,
+            model_embedding=MODEL_EMBEDDING,
             return_type="dict"
         )
     

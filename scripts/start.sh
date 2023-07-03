@@ -51,7 +51,7 @@ export SERVICE_PORT=8080
 echo "Service at port: "${SERVICE_PORT}
 python -m uvicorn src.server:app \
     --port ${SERVICE_PORT} \
-    --workers 1 \
+    --workers 2 \
     --log-level info \
     --log-config ${PROJ_DIR}/src/logging/logging_config.ini
     # --no-access-log 
